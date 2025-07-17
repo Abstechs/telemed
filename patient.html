@@ -1,42 +1,192 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Tailwind CSS (via jsDelivr CDN) -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TeleMed | Patient Dashboard</title>
 
-    <!-- Bootstrap (optional, if needed) -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Bootstrap (optional) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Toastify -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <!-- Toastify -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
-    <!-- Alpine.js -->
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-    <!-- Firebase logic -->
-    <script type="module" src="./app.js"></script>
+  <!-- Alpine.js -->
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
-    <title>TeleMed</title>
-    <link rel="stylesheet" href="styles.css">
+  <!-- Firebase Logic -->
+  <script type="module">
+    import { auth, db, onAuthStateChanged, signOut, collection, addDoc, query, where, onSnapshot } from "./app.js";
+
+    let currentUser = null;
+    let currentCaseId = null;
+
+    // Wait for auth
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUser = user;
+        loadCases(user.uid);
+        loadMessages(user.uid);
+      } else {
+        window.location.href = "login.html";
+      }
+    });
+
+    // Submit symptoms
+    async function handleSubmitSymptoms(e) {
+      e.preventDefault();
+      const symptoms = document.getElementById("symptoms").value.trim();
+      if (!symptoms) {
+        showToast("Please enter symptoms", "red");
+        return;
+      }
+      try {
+        await addDoc(collection(db, "cases"), {
+          patientId: currentUser.uid,
+          symptoms: symptoms,
+          status: "Pending",
+          createdAt: new Date()
+        });
+        showToast("Case submitted!", "green");
+        document.getElementById("symptoms").value = "";
+      } catch (err) {
+        console.error(err);
+        showToast("Error submitting case", "red");
+      }
+    }
+
+    // Load cases for this patient
+    function loadCases(uid) {
+      const q = query(collection(db, "cases"), where("patientId", "==", uid));
+      onSnapshot(q, (snapshot) => {
+        const tbody = document.getElementById("casesBody");
+        tbody.innerHTML = "";
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          currentCaseId = doc.id; // track the most recent case for chat
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="border px-4 py-2">${data.symptoms}</td>
+            <td class="border px-4 py-2">${data.status}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      });
+    }
+
+    // Submit chat message
+    async function handleSendMessage(e) {
+      e.preventDefault();
+      const msg = document.getElementById("messageInput").value.trim();
+      if (!msg || !currentCaseId) return;
+      try {
+        await addDoc(collection(db, "messages"), {
+          caseId: currentCaseId,
+          senderRole: "patient",
+          text: msg,
+          createdAt: new Date()
+        });
+        document.getElementById("messageInput").value = "";
+      } catch (err) {
+        console.error(err);
+        showToast("Error sending message", "red");
+      }
+    }
+
+    // Load chat messages
+    function loadMessages(uid) {
+      const q = query(collection(db, "messages"), where("senderRole", "!=", ""));
+      onSnapshot(q, (snapshot) => {
+        const chatBox = document.getElementById("chatBox");
+        chatBox.innerHTML = "";
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.caseId === currentCaseId) {
+            const div = document.createElement("div");
+            const roleColor = data.senderRole === "patient" ? "bg-green-100 text-green-800 self-end" : "bg-gray-200 text-gray-700 self-start";
+            div.className = `p-2 m-1 rounded w-fit max-w-xs ${roleColor}`;
+            div.textContent = data.text;
+            chatBox.appendChild(div);
+          }
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
+      });
+    }
+
+    // Logout
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("symptomForm").addEventListener("submit", handleSubmitSymptoms);
+      document.getElementById("messageForm").addEventListener("submit", handleSendMessage);
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        signOut(auth).then(() => {
+          window.location.href = "login.html";
+        });
+      });
+    });
+
+    function showToast(msg, color) {
+      Toastify({
+        text: msg,
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        backgroundColor: color === "green" ? "#16a34a" : "#dc2626",
+      }).showToast();
+    }
+  </script>
 </head>
-<body>
-    <header>
-        <h1>Welcome to TeleMed</h1>
-    </header>
-    <main>
-        <p>This is a simple web page example.</p>
-    </main>
-    <footer>
-        <p>&copy; 2023 My Web Page</p>
-    </footer>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+  <!-- Navbar -->
+  <nav class="bg-green-600 text-white p-4 flex justify-between items-center">
+    <h1 class="text-lg font-bold"><i class="fa-solid fa-stethoscope mr-2"></i>TeleMed Patient</h1>
+    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+  </nav>
+
+  <main class="p-4 flex-1 overflow-y-auto">
+    <!-- Symptom Submission -->
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-2"><i class="fa-solid fa-notes-medical mr-2"></i>Submit Symptoms</h2>
+      <form id="symptomForm" class="flex flex-col md:flex-row gap-2">
+        <input id="symptoms" type="text" class="flex-1 border px-3 py-2 rounded" placeholder="Describe your symptoms...">
+        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"><i class="fa-solid fa-paper-plane mr-1"></i>Submit</button>
+      </form>
+    </section>
+
+    <!-- Case Status -->
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-2"><i class="fa-solid fa-vial-circle-check mr-2"></i>Case Results</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full bg-white border rounded">
+          <thead>
+            <tr class="bg-gray-200">
+              <th class="border px-4 py-2 text-left">Symptoms</th>
+              <th class="border px-4 py-2 text-left">Status</th>
+            </tr>
+          </thead>
+          <tbody id="casesBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Chat -->
+    <section class="mb-8">
+      <h2 class="text-xl font-semibold mb-2"><i class="fa-solid fa-comments mr-2"></i>Chat with Lab Technician</h2>
+      <div id="chatBox" class="border rounded p-2 h-64 overflow-y-auto bg-white flex flex-col mb-2"></div>
+      <form id="messageForm" class="flex gap-2">
+        <input id="messageInput" type="text" class="flex-1 border px-3 py-2 rounded" placeholder="Type your message...">
+        <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"><i class="fa-solid fa-paper-plane"></i></button>
+      </form>
+    </section>
+  </main>
 </body>
 </html>
