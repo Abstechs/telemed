@@ -33,11 +33,21 @@
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
       const role = document.getElementById("role").value;
+      const signupBtn = document.getElementById("signupBtn");
 
-      if (!email || !password || !role) {
-        showToast("Please fill all fields", "red");
+      // ✅ Validate fields first
+      if (!role) {
+        showToast("Please select a role before signing up", "red");
         return;
       }
+      if (!email || !password) {
+        showToast("Please fill in all fields", "red");
+        return;
+      }
+
+      // ✅ Show loading state
+      signupBtn.disabled = true;
+      signupBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> Signing Up...`;
 
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -63,6 +73,9 @@
       } catch (error) {
         console.error(error);
         showToast(error.message, "red");
+        // ✅ Reset button on error
+        signupBtn.disabled = false;
+        signupBtn.innerHTML = `<i class="fa-solid fa-user-plus mr-2"></i> Sign Up`;
       }
     }
 
@@ -118,7 +131,8 @@
         </div>
       </div>
 
-      <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded transition">
+      <!-- Signup Button -->
+      <button id="signupBtn" type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded transition">
         <i class="fa-solid fa-user-plus mr-2"></i> Sign Up
       </button>
     </form>
