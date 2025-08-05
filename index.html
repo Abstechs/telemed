@@ -8,119 +8,217 @@
   <!-- Tailwind CSS -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
-  <!-- Bootstrap (optional) -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-  <!-- Toastify (if needed later for alerts) -->
-  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-
-  <!-- jQuery -->
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
-  <!-- Alpine.js -->
-  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
 <body class="bg-gray-50 text-gray-800">
 
   <!-- Navbar -->
-  <header class="bg-green-600 text-white p-4 flex justify-between items-center">
-    <h1 class="text-xl font-bold flex items-center">
+  <header class="bg-green-600 text-white p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center">
+    <h1 class="text-xl font-bold flex items-center justify-center mb-3 sm:mb-0">
       <i class="fa-solid fa-hand-holding-medical mr-2"></i> TeleMed
     </h1>
-    <div class="space-x-4">
-      <a href="login.html" class="bg-white text-green-600 px-3 py-1 rounded hover:bg-gray-100">
+    <div class="flex flex-col sm:flex-row gap-2 sm:gap-4 items-center">
+      <a href="login.html" class="w-full sm:w-auto bg-white text-green-600 px-4 py-2 rounded hover:bg-gray-100 text-sm text-center">
         <i class="fa-solid fa-right-to-bracket mr-1"></i> Login
       </a>
-      <a href="signup.html" class="bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500">
+      <a href="signup.html" class="w-full sm:w-auto bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500 text-sm text-center">
         <i class="fa-solid fa-user-plus mr-1"></i> Sign Up
       </a>
     </div>
   </header>
 
-  <!-- Hero Section -->
-  <section class="bg-green-100 py-12 px-6 text-center">
-    <h2 class="text-3xl font-bold mb-4">
-      Harnessing Telemedicine for Parasitic Disease Management
-    </h2>
-    <p class="text-lg mb-6 max-w-3xl mx-auto">
-      TeleMed bridges the gap between patients in remote areas and healthcare providers. 
-      Instantly connect with lab technicians, submit symptoms, receive real-time results, 
-      and access educational resources on parasitic diseases.  
+  <!-- Hero -->
+  <section class="bg-green-100 py-12 px-4 sm:px-6 text-center">
+    <h2 class="text-3xl md:text-4xl font-bold mb-4">Harnessing Telemedicine for Parasitic Disease Management</h2>
+    <p class="text-base md:text-lg mb-6 max-w-2xl mx-auto">
+      TeleMed connects patients and healthcare providers through a digital bridge, focusing on real-time consultation, lab result delivery, and educational access in remote areas.
     </p>
-    <div class="space-x-4">
-      <a href="signup.html" class="bg-green-600 text-white px-6 py-3 rounded-lg shadow hover:bg-green-700">
+    <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+      <a href="signup.html" class="bg-green-600 text-white px-6 py-3 rounded-lg shadow hover:bg-green-700 w-full sm:w-auto text-center">
         <i class="fa-solid fa-user-plus mr-2"></i> Get Started
       </a>
-      <a href="#education" class="bg-white border border-green-600 text-green-600 px-6 py-3 rounded-lg shadow hover:bg-green-50">
+      <a href="#education" class="bg-white border border-green-600 text-green-600 px-6 py-3 rounded-lg shadow hover:bg-green-50 w-full sm:w-auto text-center">
         <i class="fa-solid fa-book-open mr-2"></i> Learn More
       </a>
     </div>
   </section>
 
-  <!-- Features Section -->
-  <section class="py-12 px-6 bg-white">
+  <!-- Features -->
+  <section class="py-12 px-4 sm:px-6 bg-white">
     <h3 class="text-2xl font-bold mb-8 text-center">Platform Highlights</h3>
-    <div class="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-      <div class="p-6 border rounded-lg shadow hover:shadow-md transition">
+    <div class="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 max-w-6xl mx-auto">
+      <div class="p-6 border rounded-lg shadow text-center">
         <i class="fa-solid fa-user-doctor text-green-600 text-3xl mb-4"></i>
         <h4 class="text-xl font-semibold mb-2">Teleconsultation</h4>
-        <p>Chat with lab technicians in real time to get advice on parasitic diseases and recommended treatment steps.</p>
+        <p class="text-sm">Consult with lab technicians directly about parasitic disease symptoms and follow-up.</p>
       </div>
-      <div class="p-6 border rounded-lg shadow hover:shadow-md transition">
+      <div class="p-6 border rounded-lg shadow text-center">
         <i class="fa-solid fa-vial text-green-600 text-3xl mb-4"></i>
-        <h4 class="text-xl font-semibold mb-2">Lab Integration</h4>
-        <p>Submit your symptoms and receive lab diagnostic results securely and quickly from remote facilities.</p>
+        <h4 class="text-xl font-semibold mb-2">Lab Services</h4>
+        <p class="text-sm">Submit symptoms and receive diagnostic lab feedback digitally from specialists.</p>
       </div>
-      <div class="p-6 border rounded-lg shadow hover:shadow-md transition">
+      <div class="p-6 border rounded-lg shadow text-center">
         <i class="fa-solid fa-chart-line text-green-600 text-3xl mb-4"></i>
         <h4 class="text-xl font-semibold mb-2">Surveillance</h4>
-        <p>Aggregate data helps monitor parasitic disease trends and supports decision-making for public health interventions.</p>
+        <p class="text-sm">Monitor parasitic disease outbreaks and trends in real time.</p>
       </div>
     </div>
   </section>
 
-  <!-- Education Section -->
-  <section id="education" class="py-12 px-6 bg-gray-100">
+  <!-- Education -->
+  <section id="education" class="py-12 px-4 sm:px-6 bg-gray-100">
     <h3 class="text-2xl font-bold mb-8 text-center">Learn About Parasitic Diseases</h3>
-    <div class="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-      <!-- Malaria -->
-      <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
+    <div class="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 max-w-6xl mx-auto">
+      <div class="bg-white p-6 rounded-lg shadow text-center">
         <i class="fa-solid fa-bug text-red-500 text-3xl mb-4"></i>
         <h4 class="text-lg font-semibold mb-2">Malaria</h4>
-        <p>Caused by Plasmodium parasites transmitted through mosquitoes. Symptoms include fever, chills, and fatigue. 
-        Early diagnosis and prompt treatment prevent complications.</p>
+        <p class="text-sm">Caused by Plasmodium parasites via mosquitoes. Early detection saves lives.</p>
       </div>
-      <!-- Schistosomiasis -->
-      <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
+      <div class="bg-white p-6 rounded-lg shadow text-center">
         <i class="fa-solid fa-water text-blue-500 text-3xl mb-4"></i>
         <h4 class="text-lg font-semibold mb-2">Schistosomiasis</h4>
-        <p>Also known as bilharzia, caused by parasitic worms in freshwater. Symptoms include rash, fever, chills, and later organ damage if untreated.</p>
+        <p class="text-sm">Caused by worms in freshwater. Symptoms include rash, fever, and possible organ damage.</p>
       </div>
-      <!-- Helminth Infections -->
-      <div class="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
+      <div class="bg-white p-6 rounded-lg shadow text-center">
         <i class="fa-solid fa-dna text-yellow-500 text-3xl mb-4"></i>
-        <h4 class="text-lg font-semibold mb-2">Helminth Infections</h4>
-        <p>Intestinal worms like hookworms and roundworms cause anemia and malnutrition. Preventable with hygiene and early treatment.</p>
+        <h4 class="text-lg font-semibold mb-2">Helminths</h4>
+        <p class="text-sm">Worm infections cause anemia & malnutrition. Preventable with hygiene.</p>
       </div>
     </div>
   </section>
 
-  <!-- CTA Section -->
+  <!-- CTA -->
   <section class="bg-green-50 py-12 px-6 text-center">
     <h3 class="text-2xl font-bold mb-4">Ready to Experience TeleMed?</h3>
     <p class="mb-6 max-w-2xl mx-auto">Join patients and healthcare providers leveraging telemedicine for better parasitic disease management.</p>
-    <a href="signup.html" class="bg-green-600 text-white px-6 py-3 rounded-lg shadow hover:bg-green-700">
+    <a class="bg-green-600 text-white px-6 py-3 rounded-lg shadow hover:bg-green-700" href="signup.html">
       <i class="fa-solid fa-user-plus mr-2"></i> Sign Up Now
     </a>
   </section>
 
+  <!-- How It Works -->
+  <section class="py-12 px-4 sm:px-6 bg-white">
+    <h3 class="text-2xl font-bold mb-8 text-center">How TeleMed Works</h3>
+    <div class="max-w-4xl mx-auto space-y-6">
+      <div class="flex items-start space-x-4">
+        <i class="fa-solid fa-mobile-alt text-green-600 text-3xl"></i>
+        <div>
+          <h4 class="text-xl font-semibold">Step 1: Connect</h4>
+          <p class="text-sm">Patients can connect via mobile app or web portal.</p>
+        </div>
+      </div>
+      <div class="flex items-start space-x-4">
+        <i class="fa-solid fa-comments text-green-600 text-3xl"></i>
+        <div>
+          <h4 class="text-xl font-semibold">Step 2: Consult</h4>
+          <p class="text-sm">Real-time consultation with lab technicians.</p>
+        </div>
+      </div>
+      <div class="flex items-start space-x-4">
+        <i class="fa-solid fa-laptop-medical text-green-600 text-3xl"></i>
+        <div>
+          <h4 class="text-xl font-semibold">Step 3: Diagnose</h4>
+          <p class="text-sm">Receive accurate diagnosis and treatment guidance.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Benefits -->
+  <section class="py-12 px-4 sm:px-6 bg-gray-100">
+    <h3 class="text-2xl font-bold mb-8 text-center">Why Choose TeleMed?</h3>
+    <div class="max-w-4xl mx-auto space-y-6">
+      <div class="flex items-start space-x-4">
+        <i class="fa-solid fa-clock text-green-600 text-3xl"></i>
+        <div>
+          <h4 class="text-xl font-semibold">Convenience</h4>
+          <p class="text-sm">Get care from home, saving time and cost.</p>
+        </div>
+      </div>
+      <div class="flex items-start space-x-4">
+        <i class="fa-solid fa-shield-alt text-green-600 text-3xl"></i>
+        <div>
+          <h4 class="text-xl font-semibold">Security</h4>
+          <p class="text-sm">Your data is encrypted and secure.</p>
+        </div>
+      </div>
+      <div class="flex items-start space-x-4">
+        <i class="fa-solid fa-user-md text-green-600 text-3xl"></i>
+        <div>
+          <h4 class="text-xl font-semibold">Expertise</h4>
+          <p class="text-sm">Access highly qualified professionals.</p>
+        </div>
+      </div>
+      <div class="flex items-start space-x-4">
+        <i class="fa-solid fa-globe text-green-600 text-3xl"></i>
+        <div>
+          <h4 class="text-xl font-semibold">Global Reach</h4>
+          <p class="text-sm">Connect with specialists worldwide.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="py-12 px-4 sm:px-6 bg-white">
+    <h3 class="text-2xl font-bold mb-8 text-center">Frequently Asked Questions</h3>
+    <div class="max-w-4xl mx-auto space-y-6">
+      <div class="flex items-start space-x-4">
+        <i class="fa-solid fa-question-circle text-green-600 text-3xl"></i>
+        <div>
+          <h4 class="text-xl font-semibold">What is TeleMed?</h4>
+          <p class="text-sm">A telemedicine platform connecting patients and providers remotely.</p>
+        </div>
+      </div>
+      <div class="flex items-start space-x-4">
+        <i class="fa-solid fa-question-circle text-green-600 text-3xl"></i>
+        <div>
+          <h4 class="text-xl font-semibold">How do I schedule a consultation?</h4>
+          <p class="text-sm">Schedule via our app or portal at your preferred time.</p>
+        </div>
+      </div>
+      <div class="flex items-start space-x-4">
+        <i class="fa-solid fa-question-circle text-green-600 text-3xl"></i>
+        <div>
+          <h4 class="text-xl font-semibold">Is my data secure?</h4>
+          <p class="text-sm">Yes, all data is encrypted and protected.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="py-12 px-4 sm:px-6 bg-gray-100">
+    <h3 class="text-2xl font-bold mb-8 text-center">What Our Users Say</h3>
+    <div class="max-w-6xl mx-auto">
+      <blockquote class="border-l-4 border-green-600 pl-4 mb-6">
+        <p class="text-lg italic">"TeleMed transformed how I access healthcare — truly convenient!"</p>
+        <footer class="mt-2 text-sm">— Jane Doe, Patient</footer>
+      </blockquote>
+      <blockquote class="border-l-4 border-green-600 pl-4 mb-6">
+        <p class="text-lg italic">"The educational resources are invaluable for understanding my condition."</p>
+        <footer class="mt-2 text-sm">— John Smith, Patient</footer>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section class="py-12 px-4 sm:px-6 bg-white">
+    <h3 class="text-2xl font-bold mb-8 text-center">Get in Touch</h3>
+    <form action="#" method="POST" class="max-w-md mx-auto space-y-4">
+      <input type="text" name="name" placeholder="Your Name" required class="w-full p-3 border rounded focus:ring-2 focus:ring-green-600">
+      <input type="email" name="email" placeholder="Your Email" required class="w-full p-3 border rounded focus:ring-2 focus:ring-green-600">
+      <textarea name="message" rows="4" placeholder="Your Message" class="w-full p-3 border rounded focus:ring-2 focus:ring-green-600"></textarea>
+      <button type="submit" class="w-full bg-green-600 text-white px-6 py-3 rounded-lg shadow hover:bg-green-700">
+        <i class="fa-solid fa-paper-plane mr-2"></i> Send Message
+      </button>
+    </form>
+  </section>
+
   <!-- Footer -->
-  <footer class="bg-gray-800 text-gray-200 text-center p-4 mt-8">
-    <p class="text-sm">&copy; 2025 TeleMed. All rights reserved.</p>
+  <footer class="bg-gray-800 text-gray-200 text-center p-4 mt-8 text-sm">
+    <p>&copy; 2025 TeleMed. All rights reserved.</p>
     <div class="mt-2 space-x-4">
       <a href="login.html" class="hover:underline">Login</a>
       <a href="signup.html" class="hover:underline">Sign Up</a>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TeleMed | Login</title>
+
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Toastify -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #f0fdf4, #d1fae5);
+      font-family: 'Inter', sans-serif;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border-radius: 1rem;
+      box-shadow: 0 4px 30px rgba(0, 128, 96, 0.2);
+      animation: fadeInUp 0.6s ease-out;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .input-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6b7280;
+    }
+    .input-field {
+      padding-left: 2.5rem;
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+  <div class="glass-card w-full max-w-md p-8">
+    <div class="text-center mb-6">
+      <i class="fa-solid fa-right-to-bracket text-green-600 text-5xl mb-2"></i>
+      <h1 class="text-2xl font-bold text-gray-800">Welcome Back</h1>
+      <p class="text-sm text-gray-500">Login to your TeleMed account</p>
+    </div>
+
+    <form id="loginForm" class="space-y-4">
+      <!-- Email -->
+      <div class="relative">
+        <i class="fa-solid fa-envelope input-icon"></i>
+        <input type="email" id="email" placeholder="Email" class="input-field w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+      </div>
+
+      <!-- Password -->
+      <div class="relative">
+        <i class="fa-solid fa-lock input-icon"></i>
+        <input type="password" id="password" placeholder="Password" class="input-field w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+        <button type="button" id="togglePassword" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+          <i class="fa-solid fa-eye"></i>
+        </button>
+      </div>
+
+      <button type="submit" id="loginBtn" class="w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white py-2 rounded-lg shadow-md transition duration-200">
+        <i class="fa-solid fa-right-to-bracket mr-2"></i> Login
+      </button>
+    </form>
+
+    <p class="text-sm text-center text-gray-500 mt-4">
+      Don't have an account? <a href="signup.html" class="text-green-600 font-medium hover:underline">Sign Up</a>
+    </p>
+  </div>
+
+  <script type="module">
+    import { auth, db, signInWithEmailAndPassword, doc, getDoc } from "../src/js/app.js";
+
+    function showToast(msg, color = "green") {
+      Toastify({
+        text: msg,
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        backgroundColor: color === "green" ? "#16a34a" : "#dc2626",
+      }).showToast();
+    }
+
+    document.getElementById("togglePassword").addEventListener("click", () => {
+      const pwd = document.getElementById("password");
+      const icon = document.querySelector("#togglePassword i");
+      if (pwd.type === "password") {
+        pwd.type = "text";
+        icon.classList.replace("fa-eye", "fa-eye-slash");
+      } else {
+        pwd.type = "password";
+        icon.classList.replace("fa-eye-slash", "fa-eye");
+      }
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+
+      if (!email || !password) {
+        showToast("Please fill all fields", "red");
+        return;
+      }
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
+        if (!userDoc.exists()) {
+          showToast("User record not found", "red");
+          return;
+        }
+        const { role } = userDoc.data();
+        if (role === "admin") window.location.href = "admin.html";
+        if (role === "staff") window.location.href = "staff.html";
+        if (role === "patient") window.location.href = "patient.html";
+      } catch (error) {
+        showToast(error.message, "red");
+      }
+    });
+  </script>
+</body>
+</html>

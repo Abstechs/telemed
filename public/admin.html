@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TeleMed | Admin Dashboard</title>
+
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Toastify -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-green-600 text-white p-4 flex justify-between items-center shadow">
+    <h1 class="text-lg sm:text-xl font-bold flex items-center gap-2">
+      <i class="fa-solid fa-hospital"></i> TeleMed Admin Dashboard
+    </h1>
+    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded text-sm font-medium">
+      <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </button>
+  </header>
+
+  <main class="flex-1 p-4 space-y-8">
+
+    <!-- Hospital Management -->
+    <section class="bg-white p-6 rounded-lg shadow space-y-4">
+      <h2 class="text-lg font-bold flex items-center gap-2">
+        <i class="fa-solid fa-plus-circle text-green-600"></i> Manage Hospitals
+      </h2>
+
+      <form id="hospitalForm" class="grid sm:grid-cols-3 gap-4">
+        <input type="text" id="hospitalName" placeholder="Hospital Name" class="border p-2 rounded w-full" required>
+        <input type="text" id="hospitalLocation" placeholder="Location" class="border p-2 rounded w-full" required>
+        <input type="text" id="hospitalContact" placeholder="Contact Info" class="border p-2 rounded w-full" required>
+        <div class="sm:col-span-3 flex justify-end">
+          <button class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg">
+            <i class="fa-solid fa-plus"></i> Add Hospital
+          </button>
+        </div>
+      </form>
+
+      <!-- Hospital List -->
+      <div class="overflow-x-auto">
+        <table class="w-full border mt-4">
+          <thead class="bg-green-50 border-b">
+            <tr>
+              <th class="p-2 text-left">Name</th>
+              <th class="p-2 text-left">Location</th>
+              <th class="p-2 text-left">Contact</th>
+              <th class="p-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="hospitalTableBody" class="text-sm"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Staff Management (Future Ready) -->
+    <section class="bg-white p-6 rounded-lg shadow space-y-4">
+      <h2 class="text-lg font-bold flex items-center gap-2">
+        <i class="fa-solid fa-user-md text-green-600"></i> Manage Staff
+      </h2>
+
+      <form id="staffForm" class="grid sm:grid-cols-3 gap-4">
+        <input type="email" id="staffEmail" placeholder="Staff Email" class="border p-2 rounded w-full" required>
+        <select id="staffRole" class="border p-2 rounded w-full">
+          <option value="labtech">Lab Technician</option>
+          <option value="doctor">Doctor</option>
+        </select>
+        <select id="staffHospital" class="border p-2 rounded w-full"></select>
+        <div class="sm:col-span-3 flex justify-end">
+          <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
+            <i class="fa-solid fa-user-plus"></i> Assign Staff
+          </button>
+        </div>
+      </form>
+
+      <!-- Staff List Placeholder -->
+      <div class="overflow-x-auto">
+        <table class="w-full border mt-4">
+          <thead class="bg-green-50 border-b">
+            <tr>
+              <th class="p-2 text-left">Email</th>
+              <th class="p-2 text-left">Role</th>
+              <th class="p-2 text-left">Hospital</th>
+            </tr>
+          </thead>
+          <tbody id="staffTableBody" class="text-sm"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Nationwide Disease Trend -->
+    <section class="bg-white p-6 rounded-lg shadow space-y-4">
+      <h2 class="text-lg font-bold flex items-center gap-2">
+        <i class="fa-solid fa-chart-line text-green-600"></i> Nationwide Disease Trends
+      </h2>
+      <canvas id="casesChart" height="120"></canvas>
+    </section>
+
+  </main>
+
+  <script>
+    function showToast(message, color = "green") {
+      Toastify({
+        text: message,
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        backgroundColor: color === "green" ? "#16a34a" : "#dc2626",
+      }).showToast();
+    }
+
+    // Fetch hospitals
+    async function loadHospitals() {
+      const res = await fetch("/api/getHospitals");
+      const hospitals = await res.json();
+      const tbody = document.getElementById("hospitalTableBody");
+      const staffHospitalSelect = document.getElementById("staffHospital");
+
+      tbody.innerHTML = "";
+      staffHospitalSelect.innerHTML = "";
+
+      hospitals.forEach(h => {
+        tbody.innerHTML += `
+          <tr class="border-b">
+            <td class="p-2">${h.name}</td>
+            <td class="p-2">${h.location}</td>
+            <td class="p-2">${h.contactInfo}</td>
+            <td class="p-2 flex gap-2">
+              <button class="text-blue-600 hover:underline">Edit</button>
+              <button class="text-red-600 hover:underline">Delete</button>
+            </td>
+          </tr>
+        `;
+        staffHospitalSelect.innerHTML += `<option value="${h.id}">${h.name}</option>`;
+      });
+    }
+
+    // Add hospital
+    document.getElementById("hospitalForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("hospitalName").value;
+      const location = document.getElementById("hospitalLocation").value;
+      const contactInfo = document.getElementById("hospitalContact").value;
+
+      const res = await fetch("/api/addHospital", {
+        method: "POST",
+        body: JSON.stringify({ name, location, contactInfo })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showToast("Hospital added successfully!");
+        loadHospitals();
+      } else {
+        showToast("Error adding hospital", "red");
+      }
+    });
+
+    // Assign staff
+    document.getElementById("staffForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("staffEmail").value;
+      const role = document.getElementById("staffRole").value;
+      const hospitalId = document.getElementById("staffHospital").value;
+
+      const res = await fetch("/api/assignStaff", {
+        method: "POST",
+        body: JSON.stringify({ email, role, hospitalId })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        showToast("Staff assigned successfully!");
+      } else {
+        showToast(data.error || "Error assigning staff", "red");
+      }
+    });
+
+    // Render chart (placeholder data)
+    const ctx = document.getElementById("casesChart").getContext("2d");
+    new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: ["Jan", "Feb", "Mar", "Apr"],
+        datasets: [{
+          label: "Cases",
+          data: [12, 19, 8, 15],
+          backgroundColor: "rgba(16,185,129,0.2)",
+          borderColor: "#16a34a",
+          borderWidth: 2,
+          fill: true
+        }]
+      }
+    });
+
+    // Initial load
+    loadHospitals();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TeleMed | Sign Up</title>
+
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Toastify -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #f0fdf4, #d1fae5);
+      font-family: 'Inter', sans-serif;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      border-radius: 1rem;
+      box-shadow: 0 4px 30px rgba(0, 128, 96, 0.2);
+    }
+    .input-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6b7280;
+    }
+    .input-field {
+      padding-left: 2.5rem;
+    }
+  </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+  <div class="glass-card w-full max-w-md p-8">
+    <div class="text-center mb-6">
+      <i class="fa-solid fa-user-plus text-green-600 text-5xl mb-2"></i>
+      <h1 class="text-2xl font-bold text-gray-800">Create Your Account</h1>
+      <p class="text-sm text-gray-500">Join TeleMed today</p>
+    </div>
+
+    <form id="signupForm" class="space-y-4">
+      <!-- Role -->
+      <div>
+        <label class="block text-gray-700 font-medium mb-1">I am a:</label>
+        <select id="role" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+          <option value="">Select Role</option>
+          <option value="patient">Patient</option>
+          <option value="staff">Staff</option>
+        </select>
+      </div>
+
+      <!-- Hospital (staff only) -->
+      <div id="hospitalSection" class="hidden">
+        <label class="block text-gray-700 font-medium mb-1">Assign Hospital</label>
+        <select id="hospitalSelect" class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"></select>
+      </div>
+
+      <!-- Email -->
+      <div class="relative">
+        <i class="fa-solid fa-envelope input-icon"></i>
+        <input type="email" id="email" placeholder="Email" class="input-field w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+      </div>
+
+      <!-- Password -->
+      <div class="relative">
+        <i class="fa-solid fa-lock input-icon"></i>
+        <input type="password" id="password" placeholder="Password" class="input-field w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+      </div>
+
+      <button type="submit" id="signupBtn" class="w-full bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white py-2 rounded-lg shadow-md transition duration-200">
+        <i class="fa-solid fa-user-plus mr-2"></i> Sign Up
+      </button>
+    </form>
+
+    <p class="text-sm text-center text-gray-500 mt-4">
+      Already have an account? <a href="login.html" class="text-green-600 font-medium hover:underline">Login</a>
+    </p>
+  </div>
+
+  <script type="module">
+    import { auth, db, createUserWithEmailAndPassword, collection, getDocs, doc, setDoc } from "../src/js/app.js";
+
+    const roleSelect = document.getElementById("role");
+    const hospitalSection = document.getElementById("hospitalSection");
+    const hospitalSelect = document.getElementById("hospitalSelect");
+
+    roleSelect.addEventListener("change", () => {
+      if (roleSelect.value === "staff") {
+        hospitalSection.classList.remove("hidden");
+        loadHospitals();
+      } else {
+        hospitalSection.classList.add("hidden");
+      }
+    });
+
+    async function loadHospitals() {
+      const snapshot = await getDocs(collection(db, "hospitals"));
+      hospitalSelect.innerHTML = "";
+      snapshot.forEach(docSnap => {
+        const h = docSnap.data();
+        hospitalSelect.innerHTML += `<option value="${docSnap.id}">${h.name}</option>`;
+      });
+    }
+
+    function showToast(msg, color = "green") {
+      Toastify({
+        text: msg,
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        backgroundColor: color === "green" ? "#16a34a" : "#dc2626",
+      }).showToast();
+    }
+
+    document.getElementById("signupForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const role = roleSelect.value;
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const hospitalId = hospitalSelect.value || null;
+
+      if (!role || !email || !password) {
+        showToast("Please fill all fields", "red");
+        return;
+      }
+
+      if (role === "staff" && !hospitalId) {
+        showToast("Please select a hospital", "red");
+        return;
+      }
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await setDoc(doc(db, "users", userCredential.user.uid), {
+          email,
+          role,
+          hospitalId: role === "staff" ? hospitalId : null,
+          createdAt: new Date()
+        });
+        showToast("Signup successful!");
+        redirectUser(role);
+      } catch (error) {
+        showToast(error.message, "red");
+      }
+    });
+
+    function redirectUser(role) {
+      if (role === "staff") window.location.href = "staff.html";
+      if (role === "patient") window.location.href = "patient.html";
+    }
+  </script>
+</body>
+</html>

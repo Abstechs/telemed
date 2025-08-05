@@ -1,0 +1,25 @@
+{
+  "name": "telemed",
+  "version": "1.0.0",
+  "description": "Telemedicine platform for remote consultations, diagnosis, and management.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build public",
+    "preview": "vite preview"
+  },
+  "keywords": [],
+  "author": "Abdulfatai Sodiq Toyin",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Abstechs/telemed.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Abstechs/telemed/issues"
+  },
+  "homepage": "https://github.com/Abstechs/telemed#readme",
+  "dependencies": {
+    "vite": "^7.0.6"
+  }
+}

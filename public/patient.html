@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TeleMed | Patient Dashboard</title>
+
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Toastify -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .offline-banner { display: none; background: #dc2626; color: white; padding: 5px; text-align: center; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+  <!-- Offline Banner -->
+  <div id="offlineBanner" class="offline-banner">You are offline. Some features may not work.</div>
+
+  <!-- Header -->
+  <header class="bg-green-600 text-white p-4 flex justify-between items-center shadow">
+    <h1 class="text-lg sm:text-xl font-bold flex items-center gap-2">
+      <i class="fa-solid fa-user"></i> Patient Dashboard
+    </h1>
+    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded text-sm font-medium">
+      <i class="fa-solid fa-right-from-bracket"></i> Logout
+    </button>
+  </header>
+
+  <main class="flex-1 p-4 space-y-8">
+
+    <!-- Submit Symptoms -->
+    <section class="bg-white p-6 rounded-lg shadow space-y-4">
+      <h2 class="text-lg font-bold flex items-center gap-2">
+        <i class="fa-solid fa-notes-medical text-green-600"></i> Submit New Symptoms
+      </h2>
+      <form id="symptomsForm" class="grid sm:grid-cols-2 gap-4">
+        <input type="text" id="symptoms" placeholder="Describe your symptoms" class="border p-2 rounded w-full" required>
+        <div class="sm:col-span-2 flex justify-end">
+          <button class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg">
+            <i class="fa-solid fa-plus"></i> Submit
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- My Cases -->
+    <section class="bg-white p-6 rounded-lg shadow space-y-4">
+      <h2 class="text-lg font-bold flex items-center gap-2">
+        <i class="fa-solid fa-clipboard-list text-green-600"></i> My Cases
+      </h2>
+      <div class="overflow-x-auto">
+        <table class="w-full border">
+          <thead class="bg-green-50 border-b">
+            <tr>
+              <th class="p-2 text-left">Symptoms</th>
+              <th class="p-2 text-left">Diagnosis</th>
+              <th class="p-2 text-left">Result</th>
+              <th class="p-2 text-left">Status</th>
+              <th class="p-2">Action</th>
+            </tr>
+          </thead>
+          <tbody id="casesTableBody" class="text-sm"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Chat -->
+    <section id="chatPanel" class="bg-white p-6 rounded-lg shadow hidden space-y-4">
+      <h2 class="text-lg font-bold flex items-center gap-2">
+        <i class="fa-solid fa-comments text-green-600"></i> Chat with Provider
+      </h2>
+      <div class="bg-gray-50 border rounded p-4 h-60 overflow-y-auto" id="chatBox"></div>
+      <form id="chatForm" class="flex gap-2 mt-2">
+        <input type="text" id="chatMessage" placeholder="Type a message..." class="border p-2 rounded flex-1">
+        <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </form>
+    </section>
+
+    <!-- Personal History Chart -->
+    <section class="bg-white p-6 rounded-lg shadow space-y-4">
+      <h2 class="text-lg font-bold flex items-center gap-2">
+        <i class="fa-solid fa-chart-line text-green-600"></i> My Health History
+      </h2>
+      <canvas id="historyChart" height="120"></canvas>
+    </section>
+
+  </main>
+
+  <script type="module">
+    import { auth, db, onAuthStateChanged, signOut, collection, addDoc, query, where, onSnapshot, doc, updateDoc, getDoc, serverTimestamp } from "../src/js/app.js";
+
+    let currentUser = null;
+    let currentCaseId = null;
+
+    function showToast(msg, color = "green") {
+      Toastify({
+        text: msg,
+        duration: 3000,
+        gravity: "top",
+        position: "right",
+        backgroundColor: color === "green" ? "#16a34a" : "#dc2626",
+      }).showToast();
+    }
+
+    // Network monitor
+    window.addEventListener("offline", () => document.getElementById("offlineBanner").style.display = "block");
+    window.addEventListener("online", () => document.getElementById("offlineBanner").style.display = "none");
+
+    // Auth check
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+      currentUser = user;
+
+      // Ensure role is patient
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (!userDoc.exists() || userDoc.data().role !== "patient") {
+        showToast("Unauthorized access", "red");
+        window.location.href = "login.html";
+        return;
+      }
+
+      loadCases();
+      loadHistoryChart();
+    });
+
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
+
+    // Submit symptoms
+    document.getElementById("symptomsForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const symptoms = document.getElementById("symptoms").value.trim();
+      if (!symptoms) return;
+
+      await addDoc(collection(db, "cases"), {
+        patientId: currentUser.uid,
+        patientName: currentUser.email,
+        symptoms,
+        status: "pending",
+        createdAt: serverTimestamp()
+      });
+
+      document.getElementById("symptoms").value = "";
+      showToast("Symptoms submitted successfully!");
+    });
+
+    // Load my cases
+    function loadCases() {
+      const q = query(collection(db, "cases"), where("patientId", "==", currentUser.uid));
+      onSnapshot(q, (snapshot) => {
+        const tbody = document.getElementById("casesTableBody");
+        tbody.innerHTML = "";
+        if (snapshot.empty) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center p-2">No cases yet</td></tr>`;
+          return;
+        }
+        snapshot.forEach(docSnap => {
+          const c = docSnap.data();
+          tbody.innerHTML += `
+            <tr class="border-b">
+              <td class="p-2">${c.symptoms}</td>
+              <td class="p-2">${c.diagnosis || "-"}</td>
+              <td class="p-2">${c.result || "-"}</td>
+              <td class="p-2">${c.status}</td>
+              <td class="p-2">
+                <button class="text-blue-600 hover:underline" onclick="openChat('${docSnap.id}')">Chat</button>
+              </td>
+            </tr>
+          `;
+        });
+      });
+    }
+
+    // Open chat
+    window.openChat = function(caseId) {
+      currentCaseId = caseId;
+      document.getElementById("chatPanel").classList.remove("hidden");
+
+      const chatRef = doc(db, "chats", caseId);
+      onSnapshot(chatRef, (docSnap) => {
+        const chatBox = document.getElementById("chatBox");
+        chatBox.innerHTML = "";
+        if (docSnap.exists()) {
+          (docSnap.data().messages || []).forEach(msg => {
+            chatBox.innerHTML += `<div class="mb-2"><strong>${msg.senderName}:</strong> ${msg.message}</div>`;
+          });
+        } else {
+          chatBox.innerHTML = `<p class="text-gray-500">No messages yet</p>`;
+        }
+      });
+    };
+
+    // Send message
+    document.getElementById("chatForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!currentCaseId) return;
+      const message = document.getElementById("chatMessage").value.trim();
+      if (!message) return;
+
+      const chatRef = doc(db, "chats", currentCaseId);
+      const chatDoc = await getDoc(chatRef);
+
+      let messages = [];
+      if (chatDoc.exists()) messages = chatDoc.data().messages;
+      messages.push({
+        senderId: currentUser.uid,
+        senderName: currentUser.email,
+        message,
+        timestamp: new Date()
+      });
+
+      await updateDoc(chatRef, { messages });
+      document.getElementById("chatMessage").value = "";
+    });
+
+    // Personal history chart
+    function loadHistoryChart() {
+      const q = query(collection(db, "cases"), where("patientId", "==", currentUser.uid));
+      onSnapshot(q, (snapshot) => {
+        const counts = {};
+        snapshot.forEach(docSnap => {
+          const date = new Date(docSnap.data().createdAt.seconds * 1000).toLocaleDateString();
+          counts[date] = (counts[date] || 0) + 1;
+        });
+        const labels = Object.keys(counts);
+        const data = Object.values(counts);
+
+        new Chart(document.getElementById("historyChart").getContext("2d"), {
+          type: "line",
+          data: {
+            labels,
+            datasets: [{
+              label: "Cases",
+              data,
+              backgroundColor: "rgba(16,185,129,0.2)",
+              borderColor: "#16a34a",
+              borderWidth: 2,
+              fill: true
+            }]
+          }
+        });
+      });
+    }
+  </script>
+</body>
+</html>
