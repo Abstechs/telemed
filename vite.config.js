@@ -1,12 +1,22 @@
 import { defineConfig } from "vite";
+import { resolve } from "path";
 
 export default defineConfig({
-  root: "public", // This is where index.html lives
   build: {
-    outDir: "../dist", // Build output folder
-    emptyOutDir: true
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, "public/index.html"),
+        signup: resolve(__dirname, "public/signup.html"),
+        login: resolve(__dirname, "public/login.html"),
+        patient: resolve(__dirname, "public/patient.html"),
+        admin: resolve(__dirname, "public/admin.html"),
+        staff: resolve(__dirname, "public/staff.html"),
+      },
+    },
+    outDir: "dist",
+    emptyOutDir: true,
   },
   server: {
-    port: 5173
-  }
+    open: "/index.html",
+  },
 });

@@ -26,3 +26,20 @@ export function renderCasesChart(ctx, labels, data, labelName = "Cases") {
         }
     });
 }
+// src/js/charts.js
+// small helpers around Chart.js - import where needed
+export function renderBarChart(ctx, labels, values, label = 'Count') {
+  return new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ label, data: values }] },
+    options: { responsive:true, plugins:{legend:{display:false}} }
+  });
+}
+
+export function renderDoughnut(ctx, labels, values) {
+  return new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values }] },
+    options: { responsive:true }
+  });
+}

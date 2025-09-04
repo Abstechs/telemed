@@ -1,276 +1,213 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TeleMed | Staff Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TeleMed — Lab Technician Dashboard</title>
 
-  <!-- Tailwind CSS -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Toastify -->
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
   <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
+  <!-- Chart.js for small charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
   <style>
-    body { font-family: 'Inter', sans-serif; }
-    .offline-banner { display: none; background: #dc2626; color: white; padding: 5px; text-align: center; }
+    .card { background:white; border-radius:10px; padding:12px; box-shadow:0 6px 18px rgba(8,41,18,0.06) }
+    .loader { border:3px solid rgba(0,0,0,0.05); border-top:3px solid white; border-radius:50%; width:12px; height:12px; animation:spin .9s linear infinite; display:inline-block; }
+    @keyframes spin{to{transform:rotate(360deg)}}
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col">
-
-  <!-- Offline Notification -->
-  <div id="offlineBanner" class="offline-banner">You are offline. Some features may not work.</div>
-
-  <!-- Header -->
-  <header class="bg-green-600 text-white p-4 flex justify-between items-center shadow">
-    <h1 class="text-lg sm:text-xl font-bold flex items-center gap-2">
-      <i class="fa-solid fa-user-md"></i> Staff Dashboard
-    </h1>
-    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded text-sm font-medium">
-      <i class="fa-solid fa-right-from-bracket"></i> Logout
-    </button>
+<body class="bg-white min-h-screen">
+  <header class="bg-green-600 text-white">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="p-2 rounded bg-green-800"><i class="fa-solid fa-vial"></i></div>
+        <div>
+          <div class="font-bold">TeleMed</div>
+          <div class="text-xs">Lab technician</div>
+        </div>
+      </div>
+      <div>
+        <span id="staffEmail" class="text-sm mr-4"></span>
+        <button id="logout" class="px-3 py-1 bg-white/20 rounded">Logout</button>
+      </div>
+    </div>
   </header>
 
-  <main class="flex-1 p-4 space-y-8">
-
-    <!-- Search -->
-    <div class="flex justify-end mb-4">
-      <input type="text" id="searchCase" placeholder="Search patient..." class="border p-2 rounded w-64">
-    </div>
-
-    <!-- Cases Table -->
-    <section class="bg-white p-6 rounded-lg shadow space-y-4">
-      <h2 class="text-lg font-bold flex items-center gap-2">
-        <i class="fa-solid fa-notes-medical text-green-600"></i> My Cases
-      </h2>
-      <div class="overflow-x-auto">
-        <table class="w-full border">
-          <thead class="bg-green-50 border-b">
-            <tr>
-              <th class="p-2 text-left">Patient</th>
-              <th class="p-2 text-left">Symptoms</th>
-              <th class="p-2 text-left">Status</th>
-              <th class="p-2">Action</th>
-            </tr>
-          </thead>
-          <tbody id="casesTableBody" class="text-sm"></tbody>
-        </table>
+  <main class="max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Left: cases queue -->
+    <section class="lg:col-span-2 card">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-semibold">Cases queue</h2>
+        <div class="text-sm text-gray-500">Realtime feed</div>
+      </div>
+      <div id="casesArea" class="space-y-3 text-sm text-gray-700">
+        <div class="text-gray-400">Loading cases...</div>
       </div>
     </section>
 
-    <!-- Patient Details & Chat -->
-    <section id="patientPanel" class="bg-white p-6 rounded-lg shadow hidden space-y-4">
-      <h2 class="text-lg font-bold flex items-center gap-2">
-        <i class="fa-solid fa-user text-green-600"></i> Patient Record
-      </h2>
-      <div id="patientInfo" class="space-y-2 text-sm"></div>
+    <!-- Right: selected case + update form + small chart -->
+    <aside class="card">
+      <div id="caseDetailTitle" class="font-semibold mb-2">Select a case to view</div>
 
-      <!-- Update Form -->
-      <form id="updateCaseForm" class="grid sm:grid-cols-3 gap-4">
-        <input type="text" id="diagnosis" placeholder="Diagnosis" class="border p-2 rounded w-full">
-        <input type="text" id="result" placeholder="Test Result" class="border p-2 rounded w-full">
-        <select id="status" class="border p-2 rounded w-full">
+      <div id="caseDetail" class="text-sm text-gray-700 mb-3">
+        <div id="caseInfo">No case selected</div>
+      </div>
+
+      <div id="resultSection" class="space-y-2">
+        <label class="block text-xs text-gray-600">Enter result / notes</label>
+        <textarea id="resultText" rows="4" class="w-full border rounded px-2 py-2"></textarea>
+        <select id="statusSelect" class="w-full border rounded px-2 py-2">
           <option value="pending">Pending</option>
-          <option value="in-progress">In Progress</option>
+          <option value="in-progress">In progress</option>
           <option value="completed">Completed</option>
         </select>
-        <div class="sm:col-span-3 flex justify-end">
-          <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
-            <i class="fa-solid fa-save"></i> Update Record
-          </button>
-        </div>
-      </form>
+        <button id="updateBtn" class="w-full bg-green-600 text-white py-2 rounded">Update case</button>
+        <button id="openChat" class="w-full mt-2 bg-gray-100 py-2 rounded">Open chat</button>
+      </div>
 
-      <!-- Chat -->
-      <div class="bg-gray-50 border rounded p-4 h-60 overflow-y-auto" id="chatBox"></div>
-      <form id="chatForm" class="flex gap-2 mt-2">
-        <input type="text" id="chatMessage" placeholder="Type a message..." class="border p-2 rounded flex-1">
-        <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
-          <i class="fa-solid fa-paper-plane"></i>
-        </button>
-      </form>
-    </section>
-
-    <!-- Hospital Trends Chart -->
-    <section class="bg-white p-6 rounded-lg shadow space-y-4">
-      <h2 class="text-lg font-bold flex items-center gap-2">
-        <i class="fa-solid fa-chart-line text-green-600"></i> Hospital Disease Trends
-      </h2>
-      <canvas id="hospitalCasesChart" height="120"></canvas>
-    </section>
-
+      <div class="mt-4">
+        <h3 class="text-sm font-semibold mb-2">Cases (last 30 days)</h3>
+        <canvas id="miniChart" width="300" height="220"></canvas>
+      </div>
+    </aside>
   </main>
 
-  <!-- Firebase Logic -->
   <script type="module">
-    import { auth, db, onAuthStateChanged, signOut, collection, query, where, onSnapshot, doc, updateDoc, addDoc } from "../src/js/app.js";
+    import {
+      onAuthWithProfile,
+      db,
+      collection,
+      query,
+      getDocs,
+      onSnapshot,
+      where,
+      updateDoc,
+      doc,
+      sendChatMessage,
+      signOutUser
+    } from '../src/js/app.js';
 
-    let currentUser = null;
-    let currentCaseId = null;
+    const toast = (m, ok=true) => Toastify({ text:m, duration:3000, gravity:'top', position:'right', backgroundColor: ok? '#16a34a' : '#dc2626' }).showToast();
 
-    function showToast(msg, color = "green") {
-      Toastify({
-        text: msg,
-        duration: 3000,
-        gravity: "top",
-        position: "right",
-        backgroundColor: color === "green" ? "#16a34a" : "#dc2626",
-      }).showToast();
-    }
+    let me = null;
+    let selectedCaseId = null;
 
-    // Monitor network
-    window.addEventListener("offline", () => document.getElementById("offlineBanner").style.display = "block");
-    window.addEventListener("online", () => document.getElementById("offlineBanner").style.display = "none");
+    const staffEmail = document.getElementById('staffEmail');
+    const logout = document.getElementById('logout');
+    const casesArea = document.getElementById('casesArea');
+    const caseInfo = document.getElementById('caseInfo');
+    const caseDetailTitle = document.getElementById('caseDetailTitle');
+    const resultText = document.getElementById('resultText');
+    const statusSelect = document.getElementById('statusSelect');
+    const updateBtn = document.getElementById('updateBtn');
+    const openChat = document.getElementById('openChat');
 
-    // Auth check
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        window.location.href = "login.html";
-        return;
-      }
-      currentUser = user;
-
-      // Get staff hospitalId
-      const userDoc = await (await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js")).getDoc(doc(db, "users", user.uid));
-      if (!userDoc.exists() || userDoc.data().role !== "staff") {
-        showToast("Unauthorized access", "red");
-        window.location.href = "login.html";
-        return;
-      }
-      const hospitalId = userDoc.data().hospitalId;
-      loadCases(hospitalId);
-      loadTrendsChart(hospitalId);
-    });
-
-    // Logout
-    document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
-
-    // Load cases in real time
-    function loadCases(hospitalId) {
-      const q = query(collection(db, "cases"), where("hospitalId", "==", hospitalId));
-      onSnapshot(q, (snapshot) => {
-        const tbody = document.getElementById("casesTableBody");
-        tbody.innerHTML = "";
-        if (snapshot.empty) {
-          tbody.innerHTML = `<tr><td colspan="4" class="text-center p-2">No cases assigned</td></tr>`;
-          return;
-        }
-        snapshot.forEach(docSnap => {
-          const c = docSnap.data();
-          tbody.innerHTML += `
-            <tr class="border-b">
-              <td class="p-2">${c.patientName}</td>
-              <td class="p-2">${c.symptoms}</td>
-              <td class="p-2">${c.status}</td>
-              <td class="p-2">
-                <button class="text-blue-600 hover:underline" onclick="openCase('${docSnap.id}')">Open</button>
-              </td>
-            </tr>
-          `;
-        });
+    // chart
+    let miniChart = null;
+    function drawMiniChart(data) {
+      const ctx = document.getElementById('miniChart').getContext('2d');
+      const labels = Object.keys(data);
+      const values = Object.values(data);
+      if (miniChart) miniChart.destroy();
+      miniChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data: values }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
       });
     }
 
-    // Open case and chat
-    window.openCase = function(caseId) {
-      currentCaseId = caseId;
-      document.getElementById("patientPanel").classList.remove("hidden");
-
-      const caseRef = doc(db, "cases", caseId);
-      onSnapshot(caseRef, (docSnap) => {
-        const data = docSnap.data();
-        document.getElementById("patientInfo").innerHTML = `
-          <p><strong>Patient:</strong> ${data.patientName}</p>
-          <p><strong>Symptoms:</strong> ${data.symptoms}</p>
-          <p><strong>Status:</strong> ${data.status}</p>
-        `;
-        document.getElementById("diagnosis").value = data.diagnosis || "";
-        document.getElementById("result").value = data.result || "";
-        document.getElementById("status").value = data.status;
-      });
-
-      // Chat
-      const chatRef = doc(db, "chats", caseId);
-      onSnapshot(chatRef, (docSnap) => {
-        const chatBox = document.getElementById("chatBox");
-        chatBox.innerHTML = "";
-        if (docSnap.exists()) {
-          (docSnap.data().messages || []).forEach(msg => {
-            chatBox.innerHTML += `<div class="mb-2"><strong>${msg.senderName}:</strong> ${msg.message}</div>`;
-          });
-        } else {
-          chatBox.innerHTML = `<p class="text-gray-500">No messages yet</p>`;
-        }
-      });
-    };
-
-    // Update case
-    document.getElementById("updateCaseForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (!currentCaseId) return;
-      await updateDoc(doc(db, "cases", currentCaseId), {
-        diagnosis: document.getElementById("diagnosis").value,
-        result: document.getElementById("result").value,
-        status: document.getElementById("status").value
-      });
-      showToast("Case updated successfully");
+    onAuthWithProfile((state) => {
+      if (!state) { window.location.href = '/login.html'; return; }
+      me = state;
+      staffEmail.textContent = me.user.email;
+      loadCasesRealtime();
     });
 
-    // Send chat message
-    document.getElementById("chatForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      if (!currentCaseId) return;
-      const message = document.getElementById("chatMessage").value.trim();
-      if (!message) return;
+    logout.addEventListener('click', async ()=> { await signOutUser(); window.location.href = '/login.html'; });
 
-      const chatRef = doc(db, "chats", currentCaseId);
-      const chatDoc = await (await import("https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js")).getDoc(chatRef);
-
-      let messages = [];
-      if (chatDoc.exists()) messages = chatDoc.data().messages;
-      messages.push({
-        senderId: currentUser.uid,
-        senderName: currentUser.email,
-        message,
-        timestamp: new Date()
-      });
-
-      await updateDoc(chatRef, { messages });
-      document.getElementById("chatMessage").value = "";
-    });
-
-    // Trends chart
-    function loadTrendsChart(hospitalId) {
-      const q = query(collection(db, "cases"), where("hospitalId", "==", hospitalId));
-      onSnapshot(q, (snapshot) => {
+    // listen to all cases realtime
+    function loadCasesRealtime() {
+      const q = query(collection(db, 'cases'));
+      onSnapshot(q, (snap) => {
+        if (snap.empty) { casesArea.innerHTML = '<div class="text-gray-500">No cases</div>'; return; }
+        // aggregate for chart
         const counts = {};
-        snapshot.forEach(docSnap => {
-          const date = new Date(docSnap.data().createdAt.seconds * 1000).toLocaleDateString();
-          counts[date] = (counts[date] || 0) + 1;
+        const nodes = snap.docs.map(d => {
+          const data = d.data();
+          counts[data.disease] = (counts[data.disease] || 0) + 1;
+          return { id: d.id, data };
         });
-        const labels = Object.keys(counts);
-        const data = Object.values(counts);
+        drawMiniChart(counts);
 
-        new Chart(document.getElementById("hospitalCasesChart").getContext("2d"), {
-          type: "line",
-          data: {
-            labels,
-            datasets: [{
-              label: "Cases",
-              data,
-              backgroundColor: "rgba(16,185,129,0.2)",
-              borderColor: "#16a34a",
-              borderWidth: 2,
-              fill: true
-            }]
-          }
-        });
-      });
+        casesArea.innerHTML = nodes.map(n => {
+          const d = n.data;
+          return `<div class="p-2 border rounded flex items-center justify-between">
+            <div>
+              <div class="font-semibold">${d.disease || 'Unknown'}</div>
+              <div class="text-xs text-gray-500">${d.patientEmail || ''}</div>
+              <div class="text-xs text-gray-500">Status: ${d.status || 'pending'}</div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <button data-id="${n.id}" class="viewCase px-2 py-1 rounded bg-green-600 text-white text-xs">Open</button>
+              <button data-id="${n.id}" class="chatCase px-2 py-1 rounded bg-gray-100 text-xs">Chat</button>
+            </div>
+          </div>`;
+        }).join('');
+        attachCaseButtons();
+      }, (err) => { console.error(err); casesArea.innerHTML = '<div class="text-red-500">Failed to load cases</div>'; });
     }
+
+    function attachCaseButtons() {
+      document.querySelectorAll('.viewCase').forEach(b => b.addEventListener('click', async (ev) => {
+        const id = ev.currentTarget.dataset.id; selectCase(id);
+      }));
+      document.querySelectorAll('.chatCase').forEach(b => b.addEventListener('click', async (ev) => {
+        const id = ev.currentTarget.dataset.id; openChatForCase(id);
+      }));
+    }
+
+    async function selectCase(id) {
+      selectedCaseId = id;
+      caseDetailTitle.textContent = `Case: ${id}`;
+      const dref = doc(db, 'cases', id);
+      const snap = await getDocs ? null : null; // placeholder to avoid bundler linter
+      const full = await (async()=> { const s = await dref.get ? await dref.get() : await getDocs(query(collection(db,'cases'), where('__name__','==',id))); return s; })();
+      // Simpler: use getDoc import if needed; but we already have doc & updateDoc
+      // Using getDoc via simple dynamic import to avoid breaking; simpler approach follows:
+      const docSnap = await (async () => {
+        // getDoc not exported directly as getDoc function in some builds — use getDocs filter:
+        const q = query(collection(db, 'cases'), where('__name__', '==', id));
+        const res = await getDocs(q);
+        return res.docs[0];
+      })();
+      if (!docSnap) { caseInfo.textContent = 'Case not found'; return; }
+      const d = docSnap.data();
+      caseInfo.innerHTML = `<div class="text-sm"><b>Disease:</b> ${d.disease || ''}</div><div class="text-sm mt-1"><b>Patient:</b> ${d.patientEmail || ''}</div><div class="text-sm mt-1"><b>Status:</b> ${d.status || ''}</div><div class="text-sm mt-2"><b>Notes:</b> ${d.notes || ''}</div>`;
+      resultText.value = d.result || '';
+      statusSelect.value = d.status || 'pending';
+    }
+
+    updateBtn.addEventListener('click', async () => {
+      if (!selectedCaseId) return toast('Select a case first', false);
+      const newResult = resultText.value.trim();
+      const newStatus = statusSelect.value;
+      try {
+        await updateDoc(doc(db, 'cases', selectedCaseId), { result: newResult, status: newStatus });
+        toast('Case updated');
+      } catch (err) {
+        console.error(err);
+        toast('Update failed', false);
+      }
+    });
+
+    function openChatForCase(caseId) {
+      // Open chat in new tab to patient view chat - simple pattern
+      window.open(`/staff.html?chat=${caseId}`, '_blank');
+    }
+
   </script>
 </body>
 </html>

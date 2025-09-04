@@ -1,217 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TeleMed | Admin Dashboard</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TeleMed — Admin</title>
 
-  <!-- Tailwind CSS -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- Toastify -->
-  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
   <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
-  <style>
-    body { font-family: 'Inter', sans-serif; }
-  </style>
+  <style>.card{background:white;border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(8,41,18,0.06)}</style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col">
-
-  <!-- Header -->
-  <header class="bg-green-600 text-white p-4 flex justify-between items-center shadow">
-    <h1 class="text-lg sm:text-xl font-bold flex items-center gap-2">
-      <i class="fa-solid fa-hospital"></i> TeleMed Admin Dashboard
-    </h1>
-    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded text-sm font-medium">
-      <i class="fa-solid fa-right-from-bracket"></i> Logout
-    </button>
+<body class="bg-gray-50 min-h-screen">
+  <header class="bg-green-600 text-white">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="p-2 rounded bg-green-800"><i class="fa-solid fa-building-shield"></i></div>
+        <div>
+          <div class="font-bold">TeleMed — Admin</div>
+          <div class="text-xs">Manage hospitals & surveillance</div>
+        </div>
+      </div>
+      <div>
+        <button id="logoutBtn" class="px-3 py-1 bg-white/20 rounded">Logout</button>
+      </div>
+    </div>
   </header>
 
-  <main class="flex-1 p-4 space-y-8">
-
-    <!-- Hospital Management -->
-    <section class="bg-white p-6 rounded-lg shadow space-y-4">
-      <h2 class="text-lg font-bold flex items-center gap-2">
-        <i class="fa-solid fa-plus-circle text-green-600"></i> Manage Hospitals
-      </h2>
-
-      <form id="hospitalForm" class="grid sm:grid-cols-3 gap-4">
-        <input type="text" id="hospitalName" placeholder="Hospital Name" class="border p-2 rounded w-full" required>
-        <input type="text" id="hospitalLocation" placeholder="Location" class="border p-2 rounded w-full" required>
-        <input type="text" id="hospitalContact" placeholder="Contact Info" class="border p-2 rounded w-full" required>
-        <div class="sm:col-span-3 flex justify-end">
-          <button class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg">
-            <i class="fa-solid fa-plus"></i> Add Hospital
-          </button>
-        </div>
+  <main class="max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <section class="lg:col-span-1 card">
+      <h3 class="font-semibold">Register hospital</h3>
+      <form id="hospitalForm" class="space-y-2 mt-3">
+        <input id="hName" placeholder="Hospital name" class="w-full border rounded px-2 py-2" required/>
+        <input id="hLocation" placeholder="Location (town / LGA)" class="w-full border rounded px-2 py-2" required/>
+        <input id="hEmail" placeholder="Contact email (optional)" class="w-full border rounded px-2 py-2" />
+        <button class="w-full bg-green-600 text-white py-2 rounded" type="submit">Add Hospital</button>
       </form>
+    </section>
 
-      <!-- Hospital List -->
-      <div class="overflow-x-auto">
-        <table class="w-full border mt-4">
-          <thead class="bg-green-50 border-b">
-            <tr>
-              <th class="p-2 text-left">Name</th>
-              <th class="p-2 text-left">Location</th>
-              <th class="p-2 text-left">Contact</th>
-              <th class="p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="hospitalTableBody" class="text-sm"></tbody>
-        </table>
+    <section class="lg:col-span-2 card">
+      <div class="flex items-center justify-between">
+        <h3 class="font-semibold">Hospitals</h3>
+        <div class="text-sm text-gray-500">Realtime</div>
+      </div>
+      <div id="hospitalsList" class="mt-3 text-sm text-gray-700">Loading hospitals...</div>
+
+      <div class="mt-6">
+        <h4 class="font-semibold">Surveillance — cases by disease (last 30 days)</h4>
+        <canvas id="adminChart" height="120"></canvas>
       </div>
     </section>
-
-    <!-- Staff Management (Future Ready) -->
-    <section class="bg-white p-6 rounded-lg shadow space-y-4">
-      <h2 class="text-lg font-bold flex items-center gap-2">
-        <i class="fa-solid fa-user-md text-green-600"></i> Manage Staff
-      </h2>
-
-      <form id="staffForm" class="grid sm:grid-cols-3 gap-4">
-        <input type="email" id="staffEmail" placeholder="Staff Email" class="border p-2 rounded w-full" required>
-        <select id="staffRole" class="border p-2 rounded w-full">
-          <option value="labtech">Lab Technician</option>
-          <option value="doctor">Doctor</option>
-        </select>
-        <select id="staffHospital" class="border p-2 rounded w-full"></select>
-        <div class="sm:col-span-3 flex justify-end">
-          <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
-            <i class="fa-solid fa-user-plus"></i> Assign Staff
-          </button>
-        </div>
-      </form>
-
-      <!-- Staff List Placeholder -->
-      <div class="overflow-x-auto">
-        <table class="w-full border mt-4">
-          <thead class="bg-green-50 border-b">
-            <tr>
-              <th class="p-2 text-left">Email</th>
-              <th class="p-2 text-left">Role</th>
-              <th class="p-2 text-left">Hospital</th>
-            </tr>
-          </thead>
-          <tbody id="staffTableBody" class="text-sm"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Nationwide Disease Trend -->
-    <section class="bg-white p-6 rounded-lg shadow space-y-4">
-      <h2 class="text-lg font-bold flex items-center gap-2">
-        <i class="fa-solid fa-chart-line text-green-600"></i> Nationwide Disease Trends
-      </h2>
-      <canvas id="casesChart" height="120"></canvas>
-    </section>
-
   </main>
 
-  <script>
-    function showToast(message, color = "green") {
-      Toastify({
-        text: message,
-        duration: 3000,
-        gravity: "top",
-        position: "right",
-        backgroundColor: color === "green" ? "#16a34a" : "#dc2626",
-      }).showToast();
-    }
+  <script type="module">
+    import {
+      onAuthWithProfile,
+      signOutUser,
+      db,
+      collection,
+      addDoc,
+      onSnapshot,
+      query
+    } from '../src/js/app.js';
 
-    // Fetch hospitals
-    async function loadHospitals() {
-      const res = await fetch("/api/getHospitals");
-      const hospitals = await res.json();
-      const tbody = document.getElementById("hospitalTableBody");
-      const staffHospitalSelect = document.getElementById("staffHospital");
+    const toast = (m, ok=true) => Toastify({ text:m, duration:3000, gravity:'top', position:'right', backgroundColor: ok? '#16a34a' : '#dc2626' }).showToast();
 
-      tbody.innerHTML = "";
-      staffHospitalSelect.innerHTML = "";
+    const hospitalForm = document.getElementById('hospitalForm');
+    const hospitalsList = document.getElementById('hospitalsList');
+    const logoutBtn = document.getElementById('logoutBtn');
 
-      hospitals.forEach(h => {
-        tbody.innerHTML += `
-          <tr class="border-b">
-            <td class="p-2">${h.name}</td>
-            <td class="p-2">${h.location}</td>
-            <td class="p-2">${h.contactInfo}</td>
-            <td class="p-2 flex gap-2">
-              <button class="text-blue-600 hover:underline">Edit</button>
-              <button class="text-red-600 hover:underline">Delete</button>
-            </td>
-          </tr>
-        `;
-        staffHospitalSelect.innerHTML += `<option value="${h.id}">${h.name}</option>`;
-      });
-    }
+    onAuthWithProfile((state) => { if (!state) { window.location.href='/login.html'; } });
 
-    // Add hospital
-    document.getElementById("hospitalForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const name = document.getElementById("hospitalName").value;
-      const location = document.getElementById("hospitalLocation").value;
-      const contactInfo = document.getElementById("hospitalContact").value;
+    logoutBtn.addEventListener('click', async ()=> { await signOutUser(); window.location.href='/login.html'; });
 
-      const res = await fetch("/api/addHospital", {
-        method: "POST",
-        body: JSON.stringify({ name, location, contactInfo })
-      });
+    import { auth } from '../src/js/app.js';
 
-      const data = await res.json();
-      if (data.success) {
-        showToast("Hospital added successfully!");
-        loadHospitals();
-      } else {
-        showToast("Error adding hospital", "red");
-      }
+hospitalForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('hName').value.trim();
+  const location = document.getElementById('hLocation').value.trim();
+  const contactEmail = document.getElementById('hEmail').value.trim();
+
+  try {
+    const token = await auth.currentUser.getIdToken();
+    const res = await fetch('../.netlify/functions/addHospital', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ name, location, contactEmail })
     });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Add failed');
+    toast('Hospital added');
+    hospitalForm.reset();
+  } catch (err) {
+    console.error(err);
+    toast(err.message, false);
+  }
+});
 
-    // Assign staff
-    document.getElementById("staffForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const email = document.getElementById("staffEmail").value;
-      const role = document.getElementById("staffRole").value;
-      const hospitalId = document.getElementById("staffHospital").value;
 
-      const res = await fetch("/api/assignStaff", {
-        method: "POST",
-        body: JSON.stringify({ email, role, hospitalId })
+    // realtime hospitals (read allowed for authenticated users per rules)
+    onSnapshot(collection(db, 'hospitals'), (snap) => {
+      if (snap.empty) { hospitalsList.innerHTML = '<div class="text-gray-500">No hospitals</div>'; return; }
+      hospitalsList.innerHTML = snap.docs.map(d => {
+        const h = d.data();
+        return `<div class="p-2 border rounded mb-2"><div class="font-semibold">${h.name}</div><div class="text-xs text-gray-500">${h.location}</div><div class="text-xs">${h.contactEmail||''}</div></div>`;
+      }).join('');
+    }, (err)=> { hospitalsList.innerHTML = '<div class="text-red-500">Failed to load</div>'; console.error(err); });
+
+    // surveillance chart (cases by disease)
+    const ctx = document.getElementById('adminChart').getContext('2d');
+    let adminChart = null;
+    onSnapshot(collection(db, 'cases'), (snap) => {
+      const counts = {};
+      snap.docs.forEach(d => { const c = d.data(); counts[c.disease] = (counts[c.disease]||0)+1; });
+      const labels = Object.keys(counts);
+      const values = Object.values(counts);
+      if (adminChart) adminChart.destroy();
+      adminChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Cases', data: values, backgroundColor: '#059669' }] },
+        options: { responsive:true, plugins:{legend:{display:false}} }
       });
+    }, (err)=> console.error(err));
 
-      const data = await res.json();
-      if (data.success) {
-        showToast("Staff assigned successfully!");
-      } else {
-        showToast(data.error || "Error assigning staff", "red");
-      }
-    });
-
-    // Render chart (placeholder data)
-    const ctx = document.getElementById("casesChart").getContext("2d");
-    new Chart(ctx, {
-      type: "line",
-      data: {
-        labels: ["Jan", "Feb", "Mar", "Apr"],
-        datasets: [{
-          label: "Cases",
-          data: [12, 19, 8, 15],
-          backgroundColor: "rgba(16,185,129,0.2)",
-          borderColor: "#16a34a",
-          borderWidth: 2,
-          fill: true
-        }]
-      }
-    });
-
-    // Initial load
-    loadHospitals();
   </script>
-
 </body>
 </html>
