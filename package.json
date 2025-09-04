@@ -9,7 +9,11 @@
     "preview": "vite preview",
     "postcss": "postcss src/style.css -o public/style.css"
   },
-  "keywords": ["telemedicine", "parasitic diseases", "remote healthcare"],
+  "keywords": [
+    "telemedicine",
+    "parasitic diseases",
+    "remote healthcare"
+  ],
   "author": "Abdulfatai Sodiq Toyin",
   "license": "ISC",
   "repository": {
@@ -23,6 +27,7 @@
   "dependencies": {
     "chart.js": "^4.4.4",
     "firebase": "^10.14.0",
+    "firebase-admin": "^13.5.0",
     "vite": "^7.1.3"
   },
   "devDependencies": {
