@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TeleMed — Patient Dashboard</title>
+
+  <!-- Tailwind + Font Awesome + Toastify (jsDelivr) -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+  <style>
+    .loader { border: 3px solid rgba(0,0,0,0.05); border-top: 3px solid white; border-radius:50%; width:14px; height:14px; animation:spin .9s linear infinite; display:inline-block; }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .card { background: white; border-radius: 10px; padding: 12px; box-shadow: 0 6px 18px rgba(8, 41, 18, 0.06); }
+  </style>
+</head>
+<body class="bg-green-50 min-h-screen">
+
+  <header class="bg-white shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-green-600 rounded text-white"><i class="fa-solid fa-hand-holding-medical"></i></div>
+        <div>
+          <div class="font-bold text-green-700">TeleMed</div>
+          <div class="text-xs text-gray-500">Patient dashboard</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div id="userEmail" class="text-sm text-gray-600"></div>
+        <button id="logoutBtn" class="px-3 py-1 bg-gray-100 rounded text-sm">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Left: Submit symptoms -->
+    <section class="lg:col-span-1 card">
+      <h2 class="font-semibold mb-2">Report symptoms / Request consult</h2>
+      <form id="caseForm" class="space-y-3">
+        <label class="block text-xs text-gray-600">Select disease</label>
+        <select id="disease" required class="w-full border rounded px-3 py-2">
+          <option value="">Choose</option>
+          <option value="Malaria">Malaria</option>
+          <option value="Schistosomiasis">Schistosomiasis</option>
+          <option value="Helminth Infection">Intestinal helminth</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <label class="block text-xs text-gray-600">Brief symptoms</label>
+        <textarea id="symptoms" rows="4" class="w-full border rounded px-3 py-2" placeholder="Describe symptoms, duration, any meds..."></textarea>
+
+        <button id="submitCase" class="w-full bg-green-600 text-white py-2 rounded font-semibold flex items-center justify-center gap-2">
+          <span id="caseBtnText"><i class="fa-solid fa-paper-plane"></i> Submit</span>
+        </button>
+      </form>
+    </section>
+
+    <!-- Middle: My Cases -->
+    <section class="lg:col-span-1 card">
+      <h2 class="font-semibold mb-2">My cases</h2>
+      <div id="casesList" class="space-y-3 text-sm text-gray-700">
+        <p class="text-gray-400">Loading cases...</p>
+      </div>
+    </section>
+
+    <!-- Right: Chat / selected case -->
+    <section class="lg:col-span-1 card">
+      <h2 class="font-semibold mb-2">Case Chat</h2>
+      <div id="selectedCaseInfo" class="mb-3 text-sm text-gray-600">Select a case to open chat.</div>
+
+      <div id="chatArea" class="hidden flex flex-col h-64 border rounded overflow-hidden">
+        <div id="messages" class="flex-1 p-3 overflow-auto text-sm bg-gray-50"></div>
+        <div class="p-2 border-t flex gap-2">
+          <input id="chatInput" type="text" class="flex-1 border rounded px-3 py-2" placeholder="Write a message..." />
+          <button id="sendMsgBtn" class="px-3 py-2 bg-green-600 text-white rounded">Send</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    import {
+      onAuthWithProfile,
+      signOutUser,
+      createLabCase,
+      db,
+      collection,
+      query,
+      where,
+      getDocs,
+      onSnapshot,
+      sendChatMessage,
+      auth,
+      doc,
+      getDoc
+    } from '/src/js/app.js';
+
+    // small toast helper
+    const toast = (m, ok=true) => Toastify({ text:m, duration:3000, gravity:'top', position:'right', backgroundColor: ok? '#16a34a' : '#dc2626' }).showToast();
+
+    let me = null;        // {user, profile}
+    let currentChatCaseId = null;
+    let messagesUnsubscribe = null;
+
+    // UI refs
+    const userEmailEl = document.getElementById('userEmail');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const caseForm = document.getElementById('caseForm');
+    const submitBtn = document.getElementById('submitCase');
+    const caseBtnText = document.getElementById('caseBtnText');
+    const casesList = document.getElementById('casesList');
+    const selectedCaseInfo = document.getElementById('selectedCaseInfo');
+    const chatArea = document.getElementById('chatArea');
+    const messagesEl = document.getElementById('messages');
+    const chatInput = document.getElementById('chatInput');
+    const sendMsgBtn = document.getElementById('sendMsgBtn');
+
+    function setLoading(on) {
+      if (on) {
+        caseBtnText.innerHTML = '<span class="loader"></span> Sending...';
+        submitBtn.disabled = true;
+      } else {
+        caseBtnText.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit';
+        submitBtn.disabled = false;
+      }
+    }
+
+    // auth state and profile
+    onAuthWithProfile(async (state) => {
+      if (!state) {
+        // not logged in -> go to login page
+        window.location.href = '/login.html';
+        return;
+      }
+      me = state;
+      userEmailEl.textContent = me.user.email;
+      loadMyCases();
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await signOutUser();
+      window.location.href = '/login.html';
+    });
+
+    // submit new case
+    caseForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const disease = document.getElementById('disease').value;
+      const symptoms = document.getElementById('symptoms').value.trim();
+      if (!disease || !symptoms) {
+        toast('Please select disease and write symptoms', false);
+        return;
+      }
+      setLoading(true);
+      try {
+        const newId = await createLabCase({
+          patientId: me.user.uid,
+          patientEmail: me.user.email,
+          reportedByUid: me.user.uid,
+          disease,
+          notes: symptoms,
+          status: 'pending'
+        });
+        toast('Case submitted');
+        caseForm.reset();
+        // automatically open chat for this case
+        openCaseChat(newId);
+      } catch (err) {
+        console.error(err);
+        toast('Failed to submit case', false);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    // load my cases (realtime)
+    async function loadMyCases() {
+      casesList.innerHTML = '<p class="text-gray-400">Loading cases...</p>';
+      const q = query(collection(db, 'cases'), where('patientId','==', me.user.uid));
+      // realtime
+      onSnapshot(q, (snap) => {
+        if (snap.empty) {
+          casesList.innerHTML = '<p class="text-gray-500">No cases yet</p>';
+          return;
+        }
+        const nodes = snap.docs.map(doc => {
+          const d = doc.data();
+          return `<div class="p-2 border rounded flex items-start justify-between">
+            <div>
+              <div class="font-semibold">${d.disease || 'Unknown'}</div>
+              <div class="text-xs text-gray-500">Status: ${d.status || 'pending'}</div>
+              <div class="text-xs text-gray-500 mt-1">${d.notes ? (d.notes.length>80? d.notes.slice(0,80)+'...' : d.notes) : ''}</div>
+            </div>
+            <div class="flex flex-col gap-2 ml-3">
+              <button data-id="${doc.id}" class="open-chat px-2 py-1 bg-green-600 text-white rounded text-xs">Chat</button>
+              <button data-id="${doc.id}" class="view-case px-2 py-1 bg-gray-100 rounded text-xs">View</button>
+            </div>
+          </div>`;
+        });
+        casesList.innerHTML = nodes.join('');
+        // attach handlers
+        document.querySelectorAll('.open-chat').forEach(b => b.addEventListener('click', (ev) => {
+          openCaseChat(ev.currentTarget.dataset.id);
+        }));
+        document.querySelectorAll('.view-case').forEach(b => b.addEventListener('click', (ev) => {
+          showCaseDetails(ev.currentTarget.dataset.id);
+        }));
+      }, (err) => {
+        console.error(err);
+        casesList.innerHTML = '<p class="text-red-500">Failed to load cases</p>';
+      });
+    }
+
+    // show case details (popup simple)
+    async function showCaseDetails(caseId) {
+      const dref = doc(db, 'cases', caseId);
+      const snap = await getDoc(dref);
+      if (!snap.exists()) return toast('Case not found', false);
+      const d = snap.data();
+      alert(`Case: ${diseaseOrUnknown(d.disease)}\nStatus: ${d.status}\nNotes: ${d.notes || ''}\nCreated: ${d.createdAt ? d.createdAt.toDate() : 'N/A'}`);
+    }
+
+    function diseaseOrUnknown(v) { return v || 'Unknown'; }
+
+    // open chat for a case
+    function openCaseChat(caseId) {
+      currentChatCaseId = caseId;
+      selectedCaseInfo.textContent = 'Case: ' + caseId;
+      chatArea.classList.remove('hidden');
+      messagesEl.innerHTML = '<div class="text-gray-400 text-sm">Loading messages...</div>';
+
+      // unsubscribe previous
+      if (messagesUnsubscribe) messagesUnsubscribe();
+
+      const path = `chats/${caseId}/messages`;
+      const q = query(collection(db, path));
+      messagesUnsubscribe = onSnapshot(q, (snap) => {
+        if (snap.empty) {
+          messagesEl.innerHTML = '<div class="text-gray-500 p-2">No messages yet. Start the conversation.</div>';
+          return;
+        }
+        const html = snap.docs.map(d => {
+          const m = d.data();
+          const mine = m.from === me.user.uid;
+          const time = m.createdAt ? (new Date(m.createdAt.seconds * 1000)).toLocaleString() : '';
+          return `<div class="mb-2 ${mine? 'text-right' : ''}">
+            <div class="${mine ? 'inline-block bg-green-600 text-white px-3 py-1 rounded-lg' : 'inline-block bg-gray-200 px-3 py-1 rounded-lg'}">${escapeHtml(m.text)}</div>
+            <div class="text-xs text-gray-400 mt-1">${time}</div>
+          </div>`;
+        }).join('');
+        messagesEl.innerHTML = html;
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }, (err)=> { console.error(err); messagesEl.innerHTML = '<div class="text-red-500">Chat load failed</div>'; });
+    }
+
+    // send message
+    sendMsgBtn.addEventListener('click', async () => {
+      const text = chatInput.value.trim();
+      if (!text) return;
+      if (!currentChatCaseId) return toast('Select a case first', false);
+      try {
+        await sendChatMessage(currentChatCaseId, me.user.uid, text);
+        chatInput.value = '';
+      } catch (err) {
+        console.error(err);
+        toast('Failed to send message', false);
+      }
+    });
+
+    function escapeHtml(str) { return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s])); }
+
+  </script>
+</body>
+</html>

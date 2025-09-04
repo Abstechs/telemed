@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TeleMed — Login</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+  <style>
+    .loader { border: 3px solid rgba(0,0,0,0.05); border-top: 3px solid white; border-radius: 50%; width: 16px; height: 16px; animation: spin .9s linear infinite; display:inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+  <script type="module" crossorigin src="/assets/login-Dbmp7Q3L.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/app-Cv71cVJ1.js">
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+    <div class="text-center mb-4">
+      <div class="inline-flex items-center justify-center w-14 h-14 bg-green-600 rounded-full text-white mb-3">
+        <i class="fa-solid fa-right-to-bracket fa-lg"></i>
+      </div>
+      <h1 class="text-lg font-semibold text-gray-800">Welcome back</h1>
+      <p class="text-sm text-gray-500">Login to TeleMed</p>
+    </div>
+
+    <form id="loginForm" class="space-y-4">
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Email</label>
+        <input id="email" type="email" required class="w-full border rounded px-3 py-2" placeholder="you@example.com" />
+      </div>
+
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Password</label>
+        <input id="password" type="password" required class="w-full border rounded px-3 py-2" placeholder="Your password" />
+      </div>
+
+      <button id="loginBtn" type="submit" class="w-full bg-green-600 text-white py-2 rounded font-semibold flex items-center justify-center gap-2">
+        <span id="loginText"><i class="fa-solid fa-right-to-bracket"></i> Login</span>
+      </button>
+
+      <p class="text-xs text-gray-500 text-center">No account yet? <a href="signup.html" class="text-green-600">Sign up</a></p>
+    </form>
+  </div>
+
+</body>
+</html>
