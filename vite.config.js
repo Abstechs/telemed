@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import { resolve } from "path";
 
 export default defineConfig({
+  root: "public",  
   build: {
     rollupOptions: {
       input: {
@@ -13,7 +14,7 @@ export default defineConfig({
         staff: resolve(__dirname, "public/staff.html"),
       },
     },
-    outDir: "dist",
+    outDir: "../dist",
     emptyOutDir: true,
   },
   server: {

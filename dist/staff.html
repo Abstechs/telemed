@@ -18,6 +18,8 @@
     .loader { border:3px solid rgba(0,0,0,0.05); border-top:3px solid white; border-radius:50%; width:12px; height:12px; animation:spin .9s linear infinite; display:inline-block; }
     @keyframes spin{to{transform:rotate(360deg)}}
   </style>
+  <script type="module" crossorigin src="/assets/staff-YRUw5k2R.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/app-BBxhuRp7.js">
 </head>
 <body class="bg-white min-h-screen">
   <header class="bg-green-600 text-white">
@@ -73,141 +75,7 @@
         <canvas id="miniChart" width="300" height="220"></canvas>
       </div>
     </aside>
-  </main>
-
-  <script type="module">
-    import {
-      onAuthWithProfile,
-      db,
-      collection,
-      query,
-      getDocs,
-      onSnapshot,
-      where,
-      updateDoc,
-      doc,
-      sendChatMessage,
-      signOutUser
-    } from './src/js/app.js';
-
-    const toast = (m, ok=true) => Toastify({ text:m, duration:3000, gravity:'top', position:'right', backgroundColor: ok? '#16a34a' : '#dc2626' }).showToast();
-
-    let me = null;
-    let selectedCaseId = null;
-
-    const staffEmail = document.getElementById('staffEmail');
-    const logout = document.getElementById('logout');
-    const casesArea = document.getElementById('casesArea');
-    const caseInfo = document.getElementById('caseInfo');
-    const caseDetailTitle = document.getElementById('caseDetailTitle');
-    const resultText = document.getElementById('resultText');
-    const statusSelect = document.getElementById('statusSelect');
-    const updateBtn = document.getElementById('updateBtn');
-    const openChat = document.getElementById('openChat');
-
-    // chart
-    let miniChart = null;
-    function drawMiniChart(data) {
-      const ctx = document.getElementById('miniChart').getContext('2d');
-      const labels = Object.keys(data);
-      const values = Object.values(data);
-      if (miniChart) miniChart.destroy();
-      miniChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: { labels, datasets: [{ data: values }] },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-      });
-    }
-
-    onAuthWithProfile((state) => {
-      if (!state) { window.location.href = '/login.html'; return; }
-      me = state;
-      staffEmail.textContent = me.user.email;
-      loadCasesRealtime();
-    });
-
-    logout.addEventListener('click', async ()=> { await signOutUser(); window.location.href = '/login.html'; });
-
-    // listen to all cases realtime
-    function loadCasesRealtime() {
-      const q = query(collection(db, 'cases'));
-      onSnapshot(q, (snap) => {
-        if (snap.empty) { casesArea.innerHTML = '<div class="text-gray-500">No cases</div>'; return; }
-        // aggregate for chart
-        const counts = {};
-        const nodes = snap.docs.map(d => {
-          const data = d.data();
-          counts[data.disease] = (counts[data.disease] || 0) + 1;
-          return { id: d.id, data };
-        });
-        drawMiniChart(counts);
-
-        casesArea.innerHTML = nodes.map(n => {
-          const d = n.data;
-          return `<div class="p-2 border rounded flex items-center justify-between">
-            <div>
-              <div class="font-semibold">${d.disease || 'Unknown'}</div>
-              <div class="text-xs text-gray-500">${d.patientEmail || ''}</div>
-              <div class="text-xs text-gray-500">Status: ${d.status || 'pending'}</div>
-            </div>
-            <div class="flex flex-col gap-2">
-              <button data-id="${n.id}" class="viewCase px-2 py-1 rounded bg-green-600 text-white text-xs">Open</button>
-              <button data-id="${n.id}" class="chatCase px-2 py-1 rounded bg-gray-100 text-xs">Chat</button>
-            </div>
-          </div>`;
-        }).join('');
-        attachCaseButtons();
-      }, (err) => { console.error(err); casesArea.innerHTML = '<div class="text-red-500">Failed to load cases</div>'; });
-    }
-
-    function attachCaseButtons() {
-      document.querySelectorAll('.viewCase').forEach(b => b.addEventListener('click', async (ev) => {
-        const id = ev.currentTarget.dataset.id; selectCase(id);
-      }));
-      document.querySelectorAll('.chatCase').forEach(b => b.addEventListener('click', async (ev) => {
-        const id = ev.currentTarget.dataset.id; openChatForCase(id);
-      }));
-    }
-
-    async function selectCase(id) {
-      selectedCaseId = id;
-      caseDetailTitle.textContent = `Case: ${id}`;
-      const dref = doc(db, 'cases', id);
-      const snap = await getDocs ? null : null; // placeholder to avoid bundler linter
-      const full = await (async()=> { const s = await dref.get ? await dref.get() : await getDocs(query(collection(db,'cases'), where('__name__','==',id))); return s; })();
-      // Simpler: use getDoc import if needed; but we already have doc & updateDoc
-      // Using getDoc via simple dynamic import to avoid breaking; simpler approach follows:
-      const docSnap = await (async () => {
-        // getDoc not exported directly as getDoc function in some builds — use getDocs filter:
-        const q = query(collection(db, 'cases'), where('__name__', '==', id));
-        const res = await getDocs(q);
-        return res.docs[0];
-      })();
-      if (!docSnap) { caseInfo.textContent = 'Case not found'; return; }
-      const d = docSnap.data();
-      caseInfo.innerHTML = `<div class="text-sm"><b>Disease:</b> ${d.disease || ''}</div><div class="text-sm mt-1"><b>Patient:</b> ${d.patientEmail || ''}</div><div class="text-sm mt-1"><b>Status:</b> ${d.status || ''}</div><div class="text-sm mt-2"><b>Notes:</b> ${d.notes || ''}</div>`;
-      resultText.value = d.result || '';
-      statusSelect.value = d.status || 'pending';
-    }
-
-    updateBtn.addEventListener('click', async () => {
-      if (!selectedCaseId) return toast('Select a case first', false);
-      const newResult = resultText.value.trim();
-      const newStatus = statusSelect.value;
-      try {
-        await updateDoc(doc(db, 'cases', selectedCaseId), { result: newResult, status: newStatus });
-        toast('Case updated');
-      } catch (err) {
-        console.error(err);
-        toast('Update failed', false);
-      }
-    });
-
-    function openChatForCase(caseId) {
-      // Open chat in new tab to patient view chat - simple pattern
-      window.open(`/staff.html?chat=${caseId}`, '_blank');
-    }
-
-  </script>
+  </main>
+
 </body>
 </html>

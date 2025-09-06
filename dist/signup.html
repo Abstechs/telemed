@@ -28,6 +28,8 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
+  <script type="module" crossorigin src="/assets/signup-DNTul-a9.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/app-BBxhuRp7.js">
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
 
@@ -72,87 +74,7 @@
 
       <p class="text-xs text-gray-500 text-center">Already have an account? <a href="login.html" class="text-green-600">Login</a></p>
     </form>
-  </div>
-
-  <script type="module">
-    import {
-      signupAndCreateProfile,
-      isEmailRegistered
-    } from './src/js/app.js';
-
-    const form = document.getElementById('signupForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const btnText = document.getElementById('btnText');
-
-    function toast(msg, success = true) {
-      Toastify({
-        text: msg,
-        duration: 3500,
-        gravity: "top",
-        position: "right",
-        backgroundColor: success ? "#16a34a" : "#dc2626",
-      }).showToast();
-    }
-
-    async function setLoading(on) {
-      if (on) {
-        btnText.innerHTML = '<span class="loader" aria-hidden="true"></span> Creating...';
-        submitBtn.disabled = true;
-        submitBtn.classList.add('opacity-70');
-      } else {
-        btnText.innerHTML = '<i class="fa-solid fa-user-plus"></i> Sign up';
-        submitBtn.disabled = false;
-        submitBtn.classList.remove('opacity-70');
-      }
-    }
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value.trim();
-      const role = document.getElementById('role').value;
-
-      if (!email || !password || !role) {
-        toast('Please fill all fields', false);
-        return;
-      }
-
-      await setLoading(true);
-
-      try {
-        const exists = await isEmailRegistered(email);
-        if (exists) {
-          // email already in use
-          toast('Email already registered. Try logging in.', false);
-          setLoading(false);
-          return;
-        }
-
-        const credential = await signupAndCreateProfile(email, password, role);
-        toast('Signup successful! Redirecting...', true);
-
-        // redirect based on role
-        setTimeout(() => {
-          if (role === 'patient') window.location.href = '/patient.html';
-          else if (role === 'labtech') window.location.href = '/staff.html';
-          else window.location.href = '/';
-        }, 1200);
-      } catch (err) {
-        console.error(err);
-        // Friendly messages for common firebase errors
-        const msg = (err && err.code) ? (() => {
-          switch (err.code) {
-            case 'auth/invalid-email': return 'Invalid email address.';
-            case 'auth/weak-password': return 'Password too weak (min 6 chars).';
-            case 'auth/email-already-in-use': return 'Email already in use.';
-            default: return err.message || 'Signup failed.';
-          }
-        })() : 'Signup failed.';
-        toast(msg, false);
-      } finally {
-        await setLoading(false);
-      }
-    });
-  </script>
+  </div>
+
 </body>
 </html>

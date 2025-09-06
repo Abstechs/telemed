@@ -14,6 +14,8 @@
     .loader { border: 3px solid rgba(0,0,0,0.05); border-top: 3px solid white; border-radius: 50%; width: 16px; height: 16px; animation: spin .9s linear infinite; display:inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
+  <script type="module" crossorigin src="/assets/login-DK0kk6ce.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/app-BBxhuRp7.js">
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
   <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
@@ -43,53 +45,7 @@
       <p class="text-xs text-gray-500 text-center">No account yet? <a href="signup.html" class="text-green-600">Sign up</a></p>
     </form>
   </div>
-
-  <script type="module">
-    import { signIn } from './src/js/app.js';
-
-    const form = document.getElementById('loginForm');
-    const loginBtn = document.getElementById('loginBtn');
-    const loginText = document.getElementById('loginText');
-
-    function toast(msg, ok = true) {
-      Toastify({ text: msg, duration: 3000, gravity: "top", position: "right", backgroundColor: ok ? "#16a34a" : "#dc2626" }).showToast();
-    }
-
-    async function setLoading(on) {
-      if (on) {
-        loginText.innerHTML = '<span class="loader"></span> Signing in...';
-        loginBtn.disabled = true;
-        loginBtn.classList.add('opacity-70');
-      } else {
-        loginText.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Login';
-        loginBtn.disabled = false;
-        loginBtn.classList.remove('opacity-70');
-      }
-    }
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value.trim();
-      if (!email || !password) {
-        toast('Please fill all fields', false);
-        return;
-      }
-
-      await setLoading(true);
-      try {
-        await signIn(email, password);
-        toast('Login successful! Redirecting...', true);
-        // onAuthState listener in other pages should redirect to dashboard
-        setTimeout(() => window.location.href = '/patient.html', 700);
-      } catch (err) {
-        console.error(err);
-        const msg = (err && err.code) ? (err.code === 'auth/wrong-password' ? 'Incorrect password.' : (err.code === 'auth/user-not-found' ? 'User not found.' : err.message)) : 'Signin failed.';
-        toast(msg, false);
-      } finally {
-        await setLoading(false);
-      }
-    });
-  </script>
+
+
 </body>
 </html>

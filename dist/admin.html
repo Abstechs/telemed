@@ -12,6 +12,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
   <style>.card{background:white;border-radius:10px;padding:12px;box-shadow:0 6px 18px rgba(8,41,18,0.06)}</style>
+  <script type="module" crossorigin src="/assets/admin-MTL_YnHx.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/app-BBxhuRp7.js">
 </head>
 <body class="bg-gray-50 min-h-screen">
   <header class="bg-green-600 text-white">
@@ -52,83 +54,7 @@
         <canvas id="adminChart" height="120"></canvas>
       </div>
     </section>
-  </main>
-
-  <script type="module">
-    import {
-      onAuthWithProfile,
-      signOutUser,
-      db,
-      collection,
-      addDoc,
-      onSnapshot,
-      query
-    } from './src/js/app.js';
-
-    const toast = (m, ok=true) => Toastify({ text:m, duration:3000, gravity:'top', position:'right', backgroundColor: ok? '#16a34a' : '#dc2626' }).showToast();
-
-    const hospitalForm = document.getElementById('hospitalForm');
-    const hospitalsList = document.getElementById('hospitalsList');
-    const logoutBtn = document.getElementById('logoutBtn');
-
-    onAuthWithProfile((state) => { if (!state) { window.location.href='/login.html'; } });
-
-    logoutBtn.addEventListener('click', async ()=> { await signOutUser(); window.location.href='/login.html'; });
-
-    import { auth } from './src/js/app.js';
-
-hospitalForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const name = document.getElementById('hName').value.trim();
-  const location = document.getElementById('hLocation').value.trim();
-  const contactEmail = document.getElementById('hEmail').value.trim();
-
-  try {
-    const token = await auth.currentUser.getIdToken();
-    const res = await fetch('../.netlify/functions/addHospital', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ name, location, contactEmail })
-    });
-    const json = await res.json();
-    if (!res.ok) throw new Error(json.message || 'Add failed');
-    toast('Hospital added');
-    hospitalForm.reset();
-  } catch (err) {
-    console.error(err);
-    toast(err.message, false);
-  }
-});
-
-
-    // realtime hospitals (read allowed for authenticated users per rules)
-    onSnapshot(collection(db, 'hospitals'), (snap) => {
-      if (snap.empty) { hospitalsList.innerHTML = '<div class="text-gray-500">No hospitals</div>'; return; }
-      hospitalsList.innerHTML = snap.docs.map(d => {
-        const h = d.data();
-        return `<div class="p-2 border rounded mb-2"><div class="font-semibold">${h.name}</div><div class="text-xs text-gray-500">${h.location}</div><div class="text-xs">${h.contactEmail||''}</div></div>`;
-      }).join('');
-    }, (err)=> { hospitalsList.innerHTML = '<div class="text-red-500">Failed to load</div>'; console.error(err); });
-
-    // surveillance chart (cases by disease)
-    const ctx = document.getElementById('adminChart').getContext('2d');
-    let adminChart = null;
-    onSnapshot(collection(db, 'cases'), (snap) => {
-      const counts = {};
-      snap.docs.forEach(d => { const c = d.data(); counts[c.disease] = (counts[c.disease]||0)+1; });
-      const labels = Object.keys(counts);
-      const values = Object.values(counts);
-      if (adminChart) adminChart.destroy();
-      adminChart = new Chart(ctx, {
-        type: 'bar',
-        data: { labels, datasets: [{ label: 'Cases', data: values, backgroundColor: '#059669' }] },
-        options: { responsive:true, plugins:{legend:{display:false}} }
-      });
-    }, (err)=> console.error(err));
-
-  </script>
+  </main>
+
 </body>
 </html>
