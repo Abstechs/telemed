@@ -1,4 +1,4 @@
-// src/js/app.js
+// public/src/js/app.js
 // Firebase front-end bootstrap (Vite / import.meta.env)
 //
 // Note: this file is meant to be processed by Vite (import.meta.env).
